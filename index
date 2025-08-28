@@ -87,7 +87,7 @@
   <script>
     // ==== настройки ====
     const N8N_URL = "https://YOUR-N8N-DOMAIN/webhook/calc"; // ← вставь свой URL
-    const USE_MOCK = false; // ← поставь true, если n8n пока не готов
+    const USE_MOCK = true; // ← поставь true, если n8n пока не готов
 
     // ==== элементы ====
     const file = document.getElementById('file');
