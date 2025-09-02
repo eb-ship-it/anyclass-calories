@@ -2,218 +2,46 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AnyClass Calories</title>
   <style>
-    :root{
-      --bg:#FAFAFB; --card:#FFFFFF; --primary:#7B9EFF; --accent:#FFB3C7; --mint:#8ED1C6;
-      --text:#1F2937; --muted:#6B7280; --shadow:0 10px 20px rgba(0,0,0,.06); --radius:20px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family: system-ui, -apple-system, "SF Pro Text", Inter, Roboto, Arial, sans-serif;
-      color:var(--text); background: linear-gradient(180deg,#FFF, #F7F8FF 40%, #FFF);
-      min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px;
-    }
-    .app{width:100%; max-width:460px}
-    .card{
-      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin:12px 0;
-    }
-    h1{font-size:26px; margin:8px 0 4px}
-    .caption{color:var(--muted); font-size:14px}
-    .camera{
-      border:2px dashed #E5E7EB; border-radius:16px; padding:18px; text-align:center
-    }
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      border:none; border-radius:999px; padding:14px 18px; font-weight:600; cursor:pointer;
-      background:var(--primary); color:#fff; box-shadow:0 6px 14px rgba(123,158,255,.35);
-      transition:transform .12s ease-out, filter .12s ease-out;
-    }
-    .btn:active{ transform:scale(.98) }
-    .btn.secondary{ background:#EEF2FF; color:#3B82F6; box-shadow:none }
-    .hidden{display:none}
-    .preview{width:100%; border-radius:12px; margin-top:12px}
-    .loader{
-      display:flex; align-items:center; gap:10px; font-weight:600; color:#374151;
-      background:#F3F4F6; border-radius:12px; padding:10px 12px; margin-top:12px;
-    }
-    .dot{width:8px; height:8px; border-radius:50%; background:#9CA3AF; animation:b 1s infinite ease-in-out}
-    .dot:nth-child(2){animation-delay:.12s}.dot:nth-child(3){animation-delay:.24s}
-    @keyframes b{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-    .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
-    .metric{
-      background:#F8FAFF; border-radius:14px; padding:14px; text-align:center; border:1px solid #EEF2FF;
-    }
-    .metric .val{font-size:22px; font-weight:700}
-    .metric .lbl{font-size:13px; color:var(--muted); margin-top:4px}
-    .item{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px dashed #EEE}
-    .item:last-child{border-bottom:none}
-    .tag{font-size:12px; padding:4px 9px; border-radius:999px; background:#FEF3F8; color:#C0265D}
-    .success{background:var(--mint); color:#0B3A2E}
-    .footer{ text-align:center; color:#9CA3AF; font-size:12px; margin-top:6px }
-    input[type=file]{ display:none }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin:0; background:#fff; color:#111; }
+    .wrap { max-width:560px; margin:0 auto; padding:20px; }
+    .card { background:#fff; border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,.06); padding:20px; }
+    .btn { display:inline-block; padding:12px 16px; border-radius:12px; border:1px solid #ddd; cursor:pointer; }
+    .row { margin-top:12px; }
+    .muted { color:#777; font-size:14px; }
+    .list { margin:12px 0; line-height:1.6; }
+    .skeleton { height:14px; background:#eee; border-radius:6px; margin:8px 0; }
+    img { max-width:100%; border-radius:12px; }
   </style>
 </head>
 <body>
-  <main class="app">
-    <section class="card">
-      <h1>Сфотографируй тарелку 🍽️</h1>
-      <div class="caption">Снимай сверху — так точнее ✨</div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Подсчёт калорий по фото</h2>
+      <p class="muted">Загрузи фото тарелки. Лучше — сверху, хорошее освещение.</p>
 
-      <div class="camera">
-        <button id="shoot" class="btn">📷 Сфотографировать</button>
-        <button id="pick" class="btn secondary" style="margin-left:8px">Загрузить фото</button>
-        <input id="file" type="file" accept="image/*" capture="environment" />
-        <img id="preview" class="preview hidden" alt="preview" />
-        <div id="loader" class="loader hidden"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <span>Считаем… 6–10 сек</span></div>
+      <div class="row">
+        <input id="file" type="file" accept="image/*" />
       </div>
-    </section>
+      <div id="preview" class="row"></div>
 
-    <section id="result" class="card hidden">
-      <div class="grid">
-        <div class="metric"><div class="val" id="kcal">—</div><div class="lbl">Калории</div></div>
-        <div class="metric"><div class="val" id="protein">—</div><div class="lbl">Белки</div></div>
-        <div class="metric"><div class="val" id="fat">—</div><div class="lbl">Жиры</div></div>
-        <div class="metric"><div class="val" id="carb">—</div><div class="lbl">Углеводы</div></div>
+      <div class="row">
+        <button id="analyzeBtn" class="btn">Рассчитать</button>
       </div>
-      <div style="height:12px"></div>
-      <div id="items"></div>
-    </section>
 
-    <div class="footer">AnyClass: фейсфитнес и йога • демо-калькулятор</div>
-  </main>
+      <div id="loading" class="row" style="display:none;">
+        <div class="skeleton" style="width:60%"></div>
+        <div class="skeleton" style="width:80%"></div>
+        <div class="skeleton" style="width:50%"></div>
+      </div>
 
-  <script>
-    // ==== настройки ====
-    const N8N_URL = "https://YOUR-N8N-DOMAIN/webhook/calc"; // ← вставь свой URL
-    const USE_MOCK = true; // ← поставь true, если n8n пока не готов
+      <div id="result" class="row"></div>
+      <div id="error" class="row" style="color:#c00;"></div>
+    </div>
+  </div>
 
-    // ==== элементы ====
-    const file = document.getElementById('file');
-    const shoot = document.getElementById('shoot');
-    const pick = document.getElementById('pick');
-    const preview = document.getElementById('preview');
-    const loader = document.getElementById('loader');
-    const resultCard = document.getElementById('result');
-    const kcal = document.getElementById('kcal');
-    const protein = document.getElementById('protein');
-    const fat = document.getElementById('fat');
-    const carb = document.getElementById('carb');
-    const itemsDiv = document.getElementById('items');
-
-    shoot.addEventListener('click', () => file.click());
-    pick.addEventListener('click', () => file.click());
-    file.addEventListener('change', async () => {
-      const f = file.files[0];
-      if (!f) return;
-      preview.classList.add('hidden');
-      resultCard.classList.add('hidden');
-      loader.classList.remove('hidden');
-      try{
-        const base64 = await toBase64Resized(f, 1280);
-        preview.src = base64;
-        preview.classList.remove('hidden');
-
-        const payload = { imageBase64: base64 };
-        const data = USE_MOCK ? mockResponse() : await sendToN8N(payload);
-
-        renderResult(data);
-      }catch(err){
-        alert("Ошибка: " + err.message);
-      }finally{
-        loader.classList.add('hidden');
-      }
-    });
-
-    async function sendToN8N(payload){
-      const res = await fetch(N8N_URL, {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok){
-        // на демо подменим мок-ответ, если сервер не ответил
-        return mockResponse();
-      }
-      return await res.json();
-    }
-
-    function renderResult(data){
-      // ожидаем формат:
-      // { total_kcal, total_protein, total_fat, total_carb, items: [{name, grams, kcal}] }
-      kcal.textContent = Math.round(data.total_kcal ?? 0);
-      protein.textContent = Math.round(data.total_protein ?? 0);
-      fat.textContent = Math.round(data.total_fat ?? 0);
-      carb.textContent = Math.round(data.total_carb ?? 0);
-
-      const items = data.items || parseItemsMd_(data.items_md);
-      itemsDiv.innerHTML = items.map(i=>(
-        `<div class="item">
-          <div>
-            <div style="font-weight:600">${escapeHtml(i.name || '')}</div>
-            <div class="caption">${Math.round(i.grams||0)} г · ${Math.round(i.kcal||0)} ккал</div>
-          </div>
-          <div class="tag">ингредиент</div>
-        </div>`
-      )).join('');
-
-      resultCard.classList.remove('hidden');
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    function parseItemsMd_(md){
-      if (!md) return [];
-      return md.split(/\n+/).map(line=>{
-        // формат "• гречка — 150 г · 165 ккал"
-        const m = line.replace(/^•\s*/,'').match(/^(.*?)\s+—\s+(\d+)\s*г\s*·\s*(\d+)\s*ккал/i);
-        return m ? { name:m[1], grams:+m[2], kcal:+m[3] } : { name: line, grams: 0, kcal: 0 };
-      });
-    }
-
-    function mockResponse(){
-      // красивый мок для демо
-      return {
-        total_kcal: 523, total_protein: 38, total_fat: 14, total_carb: 62,
-        items: [
-          { name:"гречка, варёная", grams:150, kcal:165 },
-          { name:"куриная грудка, жареная", grams:120, kcal:198 },
-          { name:"салат овощной", grams:120, kcal:60 }
-        ]
-      };
-    }
-
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[s])); }
-
-    async function toBase64Resized(file, maxDim=1280){
-      const img = await readImage(file);
-      const {canvas, ctx} = createCanvasScaled(img, maxDim);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/jpeg', 0.85); // base64
-    }
-    function readImage(file){
-      return new Promise((resolve,reject)=>{
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = reader.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-    function createCanvasScaled(img, maxDim){
-      const canvas = document.createElement('canvas');
-      const ratio = img.width > img.height ? maxDim / img.width : maxDim / img.height;
-      canvas.width = Math.round(img.width * ratio);
-      canvas.height = Math.round(img.height * ratio);
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      return {canvas, ctx};
-    }
-  </script>
+  <script src="./script.js"></script>
 </body>
 </html>
