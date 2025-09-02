@@ -3,6 +3,7 @@ const WEBHOOK_URL = 'https://n8n-test.anysports.tv/webhook/analyze';
 
 // ====== DOM ======
 const fileInput = document.getElementById('file');
+const pickBtn   = document.getElementById('pickBtn');
 const preview   = document.getElementById('preview');
 const btn       = document.getElementById('analyzeBtn');
 const loading   = document.getElementById('loading');
@@ -15,13 +16,22 @@ function showLoading(on) { loading.style.display = on ? 'inline-block' : 'none';
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// -------- Сжатие изображения перед отправкой --------
-// Уменьшаем картинку до maxDim по большей стороне и сохраняем в JPEG
+// ---------- Открываем системный выбор/камеру ----------
+pickBtn.addEventListener('click', () => {
+  // На Android подскажем открыть тыловую камеру
+  if (/Android/i.test(navigator.userAgent)) {
+    fileInput.setAttribute('capture', 'environment');
+  } else {
+    fileInput.removeAttribute('capture'); // iOS игнорирует capture, но на всякий
+  }
+  fileInput.click();
+});
+
+// ---------- Сжатие изображения перед отправкой ----------
 async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
   try {
     if (!file || !file.type?.startsWith('image/')) return file;
 
-    // Загружаем картинку в объект Image
     const img = await new Promise((resolve, reject) => {
       const i = new Image();
       i.onload = () => resolve(i);
@@ -29,13 +39,11 @@ async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
       i.src = URL.createObjectURL(file);
     });
 
-    // Вычисляем новые размеры
     let { width, height } = img;
     const scale = Math.min(1, maxDim / Math.max(width, height));
     width  = Math.round(width * scale);
     height = Math.round(height * scale);
 
-    // Рисуем в canvas и экспортируем в JPEG
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -51,25 +59,24 @@ async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
       );
     });
   } catch {
-    // На случай ошибки просто вернём исходник
     return file;
   }
 }
 
-// -------- Превью выбранного файла --------
+// ---------- Превью выбранного файла ----------
 fileInput.addEventListener('change', () => {
   setResult(''); setError('');
   const file = fileInput.files?.[0];
   selectedFile = file || null;
-  if (!file) { 
-    preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>'; 
-    return; 
+  if (!file) {
+    preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>';
+    return;
   }
   const url = URL.createObjectURL(file);
   preview.innerHTML = `<img src="${url}" alt="preview"/>`;
 });
 
-// -------- ОБРАБОТЧИК клика по кнопке "Рассчитать" --------
+// ---------- Обработчик клика "Рассчитать" ----------
 btn.addEventListener('click', async () => {
   setError(''); setResult('');
 
@@ -78,11 +85,10 @@ btn.addEventListener('click', async () => {
     return;
   }
 
-  // ВАЖНО: здесь мы сжимаем фото перед отправкой
   const compressed = await downscaleImage(selectedFile, 1280, 0.85);
 
   const fd = new FormData();
-  // Имя поля должно быть 'image' — n8n положит его в binary.image0
+  // Поле должно называться 'image' — n8n положит его в binary.image0
   fd.append('image', compressed, 'photo.jpg');
 
   btn.disabled = true;
@@ -99,7 +105,6 @@ btn.addEventListener('click', async () => {
     }
 
     let data = await res.json();
-
     // Подстраховки под разные структуры ответа
     if (Array.isArray(data)) data = data[0] || {};
     if (data && data.json && !data.items) data = data.json;
