@@ -13,6 +13,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AnyClass Calories">
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -26,13 +27,12 @@
       --text: #eef2ff;
       --muted: rgba(238,242,255,.7);
       --danger: #ef4444;
-      --ok: #22c55e;
     }
     * { box-sizing: border-box }
     html,body { height: 100% }
     body {
       margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
       color: var(--text);
       background:
         radial-gradient(1000px 800px at 10% -10%, #1f2937 0%, transparent 60%),
@@ -86,21 +86,19 @@
     .result { margin-top: 16px }
     .result h3 { margin: 0 0 8px; font-size: 18px }
     .result .list { line-height: 1.6 }
-    
-/* Доступно скрытый элемент (лучше, чем hidden/display:none для label-for) */
-.visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
 
-    
+    /* доступно скрытый input (лучше, чем hidden/display:none для iOS PWA) */
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0 0 0 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
   </style>
 </head>
 <body>
@@ -120,18 +118,22 @@
         <span class="muted">Здесь появится превью фото</span>
       </div>
 
-    <div class="row">
-  <!-- Скрытый, но доступный инпут -->
-  <input id="file" type="file" accept="image/*" capture="environment" class="visually-hidden">
+      <div class="row">
+        <!-- Скрытый, но доступный инпут -->
+        <input id="file" type="file" accept="image/*" class="visually-hidden" />
 
-  <!-- Лейбл, который открывает системный диалог выбора фото -->
-  <label for="file" class="btn file">📷 Загрузить фото</label>
+        <!-- Кнопка, которая программно открывает выбор/камеру -->
+        <button id="pickBtn" type="button" class="btn file">📷 Загрузить фото</button>
 
-  <button id="analyzeBtn" class="btn">Рассчитать</button>
-  <span id="loading" class="muted" style="display:none;">Думаю… <span class="spinner"></span></span>
-</div>
+        <button id="analyzeBtn" class="btn">Рассчитать</button>
+        <span id="loading" class="muted" style="display:none;">Думаю… <span class="spinner"></span></span>
+      </div>
 
-    <p class="muted" style="margin-top:14px;">Совет: фото при хорошем освещении, без бликов и лишних предметов вокруг — так распознавание точнее.</p>
+      <div id="error" class="err" style="margin-top:10px;"></div>
+      <div class="result" id="result"></div>
+    </div>
+
+    <p class="muted" style="margin-top:14px;">Совет: фото при хорошем освещении, без бликов — распознавание точнее.</p>
   </div>
 
   <script src="script.js"></script>
