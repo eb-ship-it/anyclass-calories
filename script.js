@@ -111,3 +111,70 @@ function renderResult(data) {
     </div>
   `);
 }
+// Сжимает изображение в браузере до maxDim по большей стороне
+async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
+  if (!file || !file.type.startsWith('image/')) return file;
+
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(file);
+  });
+
+  const canvas = document.createElement('canvas');
+  let { width, height } = img;
+
+  // масштабируем по большей стороне
+  const scale = Math.min(1, maxDim / Math.max(width, height));
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+
+  return await new Promise((res) => {
+    canvas.toBlob(
+      (blob) => res(blob || file),
+      'image/jpeg',
+      quality
+    );
+  });
+}
+
+// Сжимает изображение в браузере до maxDim по большей стороне
+async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
+  if (!file || !file.type.startsWith('image/')) return file;
+
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(file);
+  });
+
+  const canvas = document.createElement('canvas');
+  let { width, height } = img;
+
+  // масштабируем по большей стороне
+  const scale = Math.min(1, maxDim / Math.max(width, height));
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+
+  return await new Promise((res) => {
+    canvas.toBlob(
+      (blob) => res(blob || file),
+      'image/jpeg',
+      quality
+    );
+  });
+}
