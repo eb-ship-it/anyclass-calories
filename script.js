@@ -18,12 +18,19 @@ function setResult(html) { result.innerHTML = html || ''; }
 
 // ---------- Открываем системный выбор/камеру ----------
 pickBtn.addEventListener('click', () => {
-  // На Android подскажем открыть тыловую камеру
+  // каждый раз сбрасываем value, чтобы change сработал, даже если выбрали то же фото
+  fileInput.value = '';
+
+  // запрещаем HEIC/HEIF — часто не декодируется в браузере и ломает превью/сжатие
+  fileInput.setAttribute('accept', 'image/jpeg,image/png,image/webp');
+
+  // на Android подсказка открыть тыловую камеру
   if (/Android/i.test(navigator.userAgent)) {
     fileInput.setAttribute('capture', 'environment');
   } else {
-    fileInput.removeAttribute('capture'); // iOS игнорирует capture, но на всякий
+    fileInput.removeAttribute('capture'); // iOS игнорирует capture, но пусть будет чисто
   }
+
   fileInput.click();
 });
 
@@ -31,6 +38,10 @@ pickBtn.addEventListener('click', () => {
 async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
   try {
     if (!file || !file.type?.startsWith('image/')) return file;
+
+    // если формат неожиданный — отдаём как есть
+    const okTypes = ['image/jpeg','image/png','image/webp'];
+    if (!okTypes.includes(file.type)) return file;
 
     const img = await new Promise((resolve, reject) => {
       const i = new Image();
@@ -68,12 +79,25 @@ fileInput.addEventListener('change', () => {
   setResult(''); setError('');
   const file = fileInput.files?.[0];
   selectedFile = file || null;
+
   if (!file) {
     preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>';
     return;
   }
+
+  // Инфо о файле (на случай если превью не отрисуется)
+  const info = `<span class="muted">Файл: ${file.type || 'unknown'}, ${(file.size/1024|0)}KB</span>`;
+
+  // Пробуем показать превью
   const url = URL.createObjectURL(file);
-  preview.innerHTML = `<img src="${url}" alt="preview"/>`;
+  const img = new Image();
+  img.onload = () => { preview.innerHTML = ''; preview.appendChild(img); };
+  img.onerror = () => { preview.innerHTML = info; };
+  img.src = url;
+  img.alt = 'preview';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.objectFit = 'cover';
 });
 
 // ---------- Обработчик клика "Рассчитать" ----------
@@ -85,11 +109,15 @@ btn.addEventListener('click', async () => {
     return;
   }
 
-  const compressed = await downscaleImage(selectedFile, 1280, 0.85);
+  // Сжимаем только поддерживаемые форматы; иначе — отправляем как есть
+  const needsCompress = ['image/jpeg','image/png','image/webp'].includes(selectedFile.type);
+  const fileToSend = needsCompress
+    ? await downscaleImage(selectedFile, 1280, 0.85)
+    : selectedFile;
 
   const fd = new FormData();
   // Поле должно называться 'image' — n8n положит его в binary.image0
-  fd.append('image', compressed, 'photo.jpg');
+  fd.append('image', fileToSend, 'photo.jpg');
 
   btn.disabled = true;
   showLoading(true);
