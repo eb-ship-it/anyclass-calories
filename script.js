@@ -1,5 +1,5 @@
 // ====== НАСТРОЙКА ======
-const WEBHOOK_URL = 'https://n8n-test.anysports.tv/webhook/analyze'; // твой Production URL
+const WEBHOOK_URL = 'https://n8n-test.anysports.tv/webhook/analyze'; // если адрес изменится — обнови здесь
 
 // ====== DOM ======
 const fileInput = document.getElementById('file');
@@ -11,97 +11,103 @@ const errorBox  = document.getElementById('error');
 
 let selectedFile = null;
 
-// маленькие утилиты
-function showLoading(on) { loading.style.display = on ? 'block' : 'none'; }
+function showLoading(on) { loading.style.display = on ? 'inline-block' : 'none'; }
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// ====== Превью выбранного файла ======
+// Превью выбранного файла
 fileInput.addEventListener('change', () => {
-  setResult('');
-  setError('');
+  setResult(''); setError('');
   const file = fileInput.files?.[0];
-  if (!file) {
-    selectedFile = null;
-    preview.innerHTML = '';
-    return;
-  }
-  selectedFile = file;
+  selectedFile = file || null;
+  if (!file) { preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>'; return; }
   const url = URL.createObjectURL(file);
-  preview.innerHTML = `<img src="${url}" alt="preview" />`;
+  preview.innerHTML = `<img src="${url}" alt="preview"/>`;
 });
 
-// ====== Обработка клика "Рассчитать" ======
+// Основной клик
 btn.addEventListener('click', async () => {
-  setError('');
-  setResult('');
+  setError(''); setResult('');
 
   if (!selectedFile) {
     setError('Сначала выбери фото.');
     return;
   }
 
-  // готовим форму
   const fd = new FormData();
+  // Важно: поле должно называться 'image' — n8n положит его в binary.image0
   fd.append('image', selectedFile);
-
-  // таймаут (на случай зависаний сети)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 сек
 
   btn.disabled = true;
   showLoading(true);
 
-  try {
-    const res = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      body: fd,
-      signal: controller.signal,
-    });
+  // таймаут сети
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 30000);
 
-    // если сервер вернул ошибку — покажем код и текст
+  try {
+    const res = await fetch(WEBHOOK_URL, { method: 'POST', body: fd, signal: controller.signal });
+
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status} — ${txt || 'ошибка сервера'}`);
+      throw new Error(`HTTP ${res.status}${txt ? ' — ' + txt : ''}`);
     }
 
-    // пытаемся распарсить JSON
-    let data = null;
-    try {
-      data = await res.json();
-    } catch {
-      const txt = await res.text().catch(() => '');
-      throw new Error(`Ответ не JSON — ${txt.slice(0, 300)}`);
-    }
+    // ожидаем объект {items:[], totals:{}}
+    let data = await res.json();
+    // защита от неожиданной структуры
+    if (Array.isArray(data)) data = data[0] || {};
+    if (data && data.json && !data.items) data = data.json;
 
-    // ожидаем формат { items: [...], totals: {...} }
-    const items = Array.isArray(data.items) ? data.items : [];
-    const totals = data.totals || {};
-
-    const lines = items.map(it =>
-      `• ${it.name} (~ ${Math.round(it.mass_g || 0)} г) · ${Math.round(it.kcal || 0)} ккал`
-    ).join('<br/>');
-
-    setResult(`
-      <h3>✅ Готово!</h3>
-      <div class="list">${lines || 'Ничего не распознано'}</div>
-      <div style="margin-top:8px;">
-        <div><strong>Итого:</strong> ${Math.round(totals.kcal || 0)} ккал</div>
-        <div>🥩 Белки: ${Number(totals.protein_g || 0)} г</div>
-        <div>🥑 Жиры: ${Number(totals.fat_g || 0)} г</div>
-        <div>🍞 Углеводы: ${Number(totals.carb_g || 0)} г</div>
-      </div>
-      <div class="row">
-        <button class="btn" onclick="location.reload()">Загрузить ещё фото</button>
-      </div>
-    `);
+    renderResult(data);
   } catch (e) {
-    // показываем понятное сообщение пользователю
     setError(`Ошибка: ${e.message}`);
-    console.error('[analyze error]', e);
+    console.error(e);
   } finally {
-    clearTimeout(timeoutId);
+    clearTimeout(t);
     btn.disabled = false;
     showLoading(false);
   }
 });
+
+function renderResult(data) {
+  const items = Array.isArray(data.items) ? data.items : [];
+  const totals = data.totals || {};
+
+  if (!items.length) {
+    setResult(`
+      <h3>✅ Готово!</h3>
+      <div class="muted">Ничего не распознано</div>
+      <div style="margin-top:10px;">
+        <div><strong>Итого:</strong> 0 ккал</div>
+        <div>🍓 Белки: 0 г</div>
+        <div>🥑 Жиры: 0 г</div>
+        <div>🍞 Углеводы: 0 г</div>
+      </div>
+    `);
+    return;
+  }
+
+  const lines = items.map(it => {
+    const name = it.name ?? 'продукт';
+    const mass = Math.round(Number(it.mass_g ?? 0));
+    const kcal = Math.round(Number(it.kcal ?? 0));
+    return `• ${name} (~ ${mass} г) · ${kcal} ккал`;
+  }).join('<br/>');
+
+  const kcal = Math.round(Number(totals.kcal ?? 0));
+  const p = Number(totals.protein_g ?? 0);
+  const f = Number(totals.fat_g ?? 0);
+  const c = Number(totals.carb_g ?? 0);
+
+  setResult(`
+    <h3>✅ Готово!</h3>
+    <div class="list">${lines}</div>
+    <div style="margin-top:14px;">
+      <div><strong>Итого:</strong> ${kcal} ккал</div>
+      <div>🍓 Белки: ${p}</div>
+      <div>🥑 Жиры: ${f}</div>
+      <div>🍞 Углеводы: ${c}</div>
+    </div>
+  `);
+}
