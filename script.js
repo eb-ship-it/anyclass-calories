@@ -1,5 +1,5 @@
 // ====== НАСТРОЙКА ======
-const WEBHOOK_URL = 'https://n8n-test.anysports.tv/webhook/analyze'; // если адрес изменится — обнови здесь
+const WEBHOOK_URL = 'https://n8n-test.anysports.tv/webhook/analyze';
 
 // ====== DOM ======
 const fileInput = document.getElementById('file');
@@ -15,17 +15,61 @@ function showLoading(on) { loading.style.display = on ? 'inline-block' : 'none';
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// Превью выбранного файла
+// -------- Сжатие изображения перед отправкой --------
+// Уменьшаем картинку до maxDim по большей стороне и сохраняем в JPEG
+async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
+  try {
+    if (!file || !file.type?.startsWith('image/')) return file;
+
+    // Загружаем картинку в объект Image
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = URL.createObjectURL(file);
+    });
+
+    // Вычисляем новые размеры
+    let { width, height } = img;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    width  = Math.round(width * scale);
+    height = Math.round(height * scale);
+
+    // Рисуем в canvas и экспортируем в JPEG
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    return await new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => resolve(blob || file),
+        'image/jpeg',
+        quality
+      );
+    });
+  } catch {
+    // На случай ошибки просто вернём исходник
+    return file;
+  }
+}
+
+// -------- Превью выбранного файла --------
 fileInput.addEventListener('change', () => {
   setResult(''); setError('');
   const file = fileInput.files?.[0];
   selectedFile = file || null;
-  if (!file) { preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>'; return; }
+  if (!file) { 
+    preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>'; 
+    return; 
+  }
   const url = URL.createObjectURL(file);
   preview.innerHTML = `<img src="${url}" alt="preview"/>`;
 });
 
-// Основной клик
+// -------- ОБРАБОТЧИК клика по кнопке "Рассчитать" --------
 btn.addEventListener('click', async () => {
   setError(''); setResult('');
 
@@ -34,28 +78,29 @@ btn.addEventListener('click', async () => {
     return;
   }
 
+  // ВАЖНО: здесь мы сжимаем фото перед отправкой
+  const compressed = await downscaleImage(selectedFile, 1280, 0.85);
+
   const fd = new FormData();
-  // Важно: поле должно называться 'image' — n8n положит его в binary.image0
-  fd.append('image', selectedFile);
+  // Имя поля должно быть 'image' — n8n положит его в binary.image0
+  fd.append('image', compressed, 'photo.jpg');
 
   btn.disabled = true;
   showLoading(true);
 
-  // таймаут сети
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), 30000);
 
   try {
     const res = await fetch(WEBHOOK_URL, { method: 'POST', body: fd, signal: controller.signal });
-
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status}${txt ? ' — ' + txt : ''}`);
     }
 
-    // ожидаем объект {items:[], totals:{}}
     let data = await res.json();
-    // защита от неожиданной структуры
+
+    // Подстраховки под разные структуры ответа
     if (Array.isArray(data)) data = data[0] || {};
     if (data && data.json && !data.items) data = data.json;
 
@@ -110,71 +155,4 @@ function renderResult(data) {
       <div>🍞 Углеводы: ${c}</div>
     </div>
   `);
-}
-// Сжимает изображение в браузере до maxDim по большей стороне
-async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
-  if (!file || !file.type.startsWith('image/')) return file;
-
-  const img = await new Promise((res, rej) => {
-    const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = rej;
-    i.src = URL.createObjectURL(file);
-  });
-
-  const canvas = document.createElement('canvas');
-  let { width, height } = img;
-
-  // масштабируем по большей стороне
-  const scale = Math.min(1, maxDim / Math.max(width, height));
-  width = Math.round(width * scale);
-  height = Math.round(height * scale);
-
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, width, height);
-
-  return await new Promise((res) => {
-    canvas.toBlob(
-      (blob) => res(blob || file),
-      'image/jpeg',
-      quality
-    );
-  });
-}
-
-// Сжимает изображение в браузере до maxDim по большей стороне
-async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
-  if (!file || !file.type.startsWith('image/')) return file;
-
-  const img = await new Promise((res, rej) => {
-    const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = rej;
-    i.src = URL.createObjectURL(file);
-  });
-
-  const canvas = document.createElement('canvas');
-  let { width, height } = img;
-
-  // масштабируем по большей стороне
-  const scale = Math.min(1, maxDim / Math.max(width, height));
-  width = Math.round(width * scale);
-  height = Math.round(height * scale);
-
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, width, height);
-
-  return await new Promise((res) => {
-    canvas.toBlob(
-      (blob) => res(blob || file),
-      'image/jpeg',
-      quality
-    );
-  });
 }
