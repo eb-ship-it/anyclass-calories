@@ -16,65 +16,25 @@ function showLoading(on) { loading.style.display = on ? 'inline-block' : 'none';
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// ---------- Открываем системный выбор/камеру ----------
+// Открываем системный выбор/камеру (надёжно для iOS/Android)
 pickBtn.addEventListener('click', () => {
-  // каждый раз сбрасываем value, чтобы change сработал, даже если выбрали то же фото
+  // чтобы событие change сработало даже при том же файле
   fileInput.value = '';
-
-  // запрещаем HEIC/HEIF — часто не декодируется в браузере и ломает превью/сжатие
-  fileInput.setAttribute('accept', 'image/jpeg,image/png,image/webp');
 
   // на Android подсказка открыть тыловую камеру
   if (/Android/i.test(navigator.userAgent)) {
     fileInput.setAttribute('capture', 'environment');
   } else {
-    fileInput.removeAttribute('capture'); // iOS игнорирует capture, но пусть будет чисто
+    fileInput.removeAttribute('capture'); // iOS это игнорирует
   }
+
+  // общий accept (не режем по форматам, как в рабочей версии)
+  fileInput.setAttribute('accept', 'image/*');
 
   fileInput.click();
 });
 
-// ---------- Сжатие изображения перед отправкой ----------
-async function downscaleImage(file, maxDim = 1280, quality = 0.85) {
-  try {
-    if (!file || !file.type?.startsWith('image/')) return file;
-
-    // если формат неожиданный — отдаём как есть
-    const okTypes = ['image/jpeg','image/png','image/webp'];
-    if (!okTypes.includes(file.type)) return file;
-
-    const img = await new Promise((resolve, reject) => {
-      const i = new Image();
-      i.onload = () => resolve(i);
-      i.onerror = reject;
-      i.src = URL.createObjectURL(file);
-    });
-
-    let { width, height } = img;
-    const scale = Math.min(1, maxDim / Math.max(width, height));
-    width  = Math.round(width * scale);
-    height = Math.round(height * scale);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, width, height);
-
-    return await new Promise((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob || file),
-        'image/jpeg',
-        quality
-      );
-    });
-  } catch {
-    return file;
-  }
-}
-
-// ---------- Превью выбранного файла ----------
+// Превью выбранного файла
 fileInput.addEventListener('change', () => {
   setResult(''); setError('');
   const file = fileInput.files?.[0];
@@ -85,22 +45,11 @@ fileInput.addEventListener('change', () => {
     return;
   }
 
-  // Инфо о файле (на случай если превью не отрисуется)
-  const info = `<span class="muted">Файл: ${file.type || 'unknown'}, ${(file.size/1024|0)}KB</span>`;
-
-  // Пробуем показать превью
   const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => { preview.innerHTML = ''; preview.appendChild(img); };
-  img.onerror = () => { preview.innerHTML = info; };
-  img.src = url;
-  img.alt = 'preview';
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.objectFit = 'cover';
+  preview.innerHTML = `<img src="${url}" alt="preview" style="width:100%;height:100%;object-fit:cover;"/>`;
 });
 
-// ---------- Обработчик клика "Рассчитать" ----------
+// Отправка на n8n
 btn.addEventListener('click', async () => {
   setError(''); setResult('');
 
@@ -109,15 +58,9 @@ btn.addEventListener('click', async () => {
     return;
   }
 
-  // Сжимаем только поддерживаемые форматы; иначе — отправляем как есть
-  const needsCompress = ['image/jpeg','image/png','image/webp'].includes(selectedFile.type);
-  const fileToSend = needsCompress
-    ? await downscaleImage(selectedFile, 1280, 0.85)
-    : selectedFile;
-
   const fd = new FormData();
-  // Поле должно называться 'image' — n8n положит его в binary.image0
-  fd.append('image', fileToSend, 'photo.jpg');
+  // ВАЖНО: имя поля 'image' — n8n положит файл в binary.image0
+  fd.append('image', selectedFile);
 
   btn.disabled = true;
   showLoading(true);
