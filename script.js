@@ -10,31 +10,80 @@ const loading   = document.getElementById('loading');
 const result    = document.getElementById('result');
 const errorBox  = document.getElementById('error');
 
+// Статистика (элементы)
+const statsCard = document.getElementById('statsCard');
+const sKcal = document.getElementById('sKcal');
+const sP = document.getElementById('sP');
+const sF = document.getElementById('sF');
+const sC = document.getElementById('sC');
+const sCount = document.getElementById('sCount');
+const resetStatsBtn = document.getElementById('resetStats');
+
 let selectedFile = null;
 
 function showLoading(on) { loading.style.display = on ? 'inline-block' : 'none'; }
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// Открываем системный выбор/камеру (надёжно для iOS/Android)
-pickBtn.addEventListener('click', () => {
-  // чтобы событие change сработало даже при том же файле
-  fileInput.value = '';
+// ---------- Вспомогательные для статистики ----------
+const STATS_KEY_PREFIX = 'stats:';
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${STATS_KEY_PREFIX}${y}-${m}-${day}`;
+}
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem(todayKey())) || { kcal:0, protein_g:0, fat_g:0, carb_g:0, count:0 };
+  } catch {
+    return { kcal:0, protein_g:0, fat_g:0, carb_g:0, count:0 };
+  }
+}
+function renderStats() {
+  const s = loadStats();
+  if (!statsCard) return;
+  statsCard.style.display = s.count > 0 ? 'block' : 'none';
+  sKcal.textContent = Math.round(s.kcal);
+  sP.textContent = Math.round(s.protein_g);
+  sF.textContent = Math.round(s.fat_g);
+  sC.textContent = Math.round(s.carb_g);
+  sCount.textContent = s.count;
+}
+function saveStats(totals) {
+  const s = loadStats();
+  s.kcal = (s.kcal || 0) + Number(totals.kcal || 0);
+  s.protein_g = (s.protein_g || 0) + Number(totals.protein_g || 0);
+  s.fat_g = (s.fat_g || 0) + Number(totals.fat_g || 0);
+  s.carb_g = (s.carb_g || 0) + Number(totals.carb_g || 0);
+  s.count = (s.count || 0) + 1;
+  localStorage.setItem(todayKey(), JSON.stringify(s));
+  renderStats();
+}
 
-  // на Android подсказка открыть тыловую камеру
+// Сброс статистики за день
+resetStatsBtn.addEventListener('click', () => {
+  localStorage.removeItem(todayKey());
+  renderStats();
+});
+
+// Показать статистику при загрузке страницы
+document.addEventListener('DOMContentLoaded', renderStats);
+
+// ---------- Открываем системный выбор/камеру ----------
+pickBtn.addEventListener('click', () => {
+  fileInput.value = '';
   if (/Android/i.test(navigator.userAgent)) {
     fileInput.setAttribute('capture', 'environment');
   } else {
-    fileInput.removeAttribute('capture'); // iOS это игнорирует
+    fileInput.removeAttribute('capture');
   }
-
-  // общий accept (не режем по форматам, как в рабочей версии)
   fileInput.setAttribute('accept', 'image/*');
-
   fileInput.click();
 });
 
-// Превью выбранного файла
+// ---------- Превью выбранного файла ----------
 fileInput.addEventListener('change', () => {
   setResult(''); setError('');
   const file = fileInput.files?.[0];
@@ -44,12 +93,11 @@ fileInput.addEventListener('change', () => {
     preview.innerHTML = '<span class="muted">Здесь появится превью фото</span>';
     return;
   }
-
   const url = URL.createObjectURL(file);
   preview.innerHTML = `<img src="${url}" alt="preview" style="width:100%;height:100%;object-fit:cover;"/>`;
 });
 
-// Отправка на n8n
+// ---------- Отправка на n8n ----------
 btn.addEventListener('click', async () => {
   setError(''); setResult('');
 
@@ -59,7 +107,7 @@ btn.addEventListener('click', async () => {
   }
 
   const fd = new FormData();
-  // ВАЖНО: имя поля 'image' — n8n положит файл в binary.image0
+  // Важно: имя поля 'image' — n8n положит файл в binary.image0
   fd.append('image', selectedFile);
 
   btn.disabled = true;
@@ -120,6 +168,9 @@ function renderResult(data) {
   const p = Number(totals.protein_g ?? 0);
   const f = Number(totals.fat_g ?? 0);
   const c = Number(totals.carb_g ?? 0);
+
+  // Сохраняем в статистику за сегодня
+  saveStats({ kcal, protein_g: p, fat_g: f, carb_g: c });
 
   setResult(`
     <h3>✅ Готово!</h3>
