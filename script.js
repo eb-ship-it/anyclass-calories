@@ -425,3 +425,7 @@ function renderResult(data) {
     </div>
   `);
 }
+
+<!-- В самом конце index.html -->
+<script src="/script.js?v=3"></script> <!-- поменяй 3 на любое новое число при следующем апдейте -->
+
