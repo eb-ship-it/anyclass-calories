@@ -1,4 +1,4 @@
-const CACHE = 'ac-calories-v7';
+const CACHE = 'ac-calories-v8';
 const CORE = [
   '/',
   '/index.html',
