@@ -122,4 +122,29 @@
         <!-- Скрытый, но доступный инпут -->
         <input id="file" type="file" accept="image/*" class="visually-hidden" />
 
-       
+        <!-- Кнопка, которая программно открывает выбор/камеру -->
+        <button id="pickBtn" type="button" class="btn file">📷 Загрузить фото</button>
+
+        <button id="analyzeBtn" class="btn">Рассчитать</button>
+        <span id="loading" class="muted" style="display:none;">Думаю… <span class="spinner"></span></span>
+      </div>
+
+      <div id="error" class="err" style="margin-top:10px;"></div>
+      <div class="result" id="result"></div>
+    </div>
+
+    <p class="muted" style="margin-top:14px;">Совет: фото при хорошем освещении, без бликов — распознавание точнее.</p>
+  </div>
+
+  <script src="script.js"></script>
+
+  <!-- Регистрация service worker (оставляем как было) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>
