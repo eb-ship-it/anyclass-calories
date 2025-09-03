@@ -1,45 +1,34 @@
-const CACHE = 'ac-calories-v8';
-const CORE = [
-  '/',
-  '/index.html',
-  '/script.js',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+// Версию меняй при каждом релизе, чтобы сервис-воркер обновился
+const CACHE_NAME = 'anyclass-v4';
 
-// Установка: кешируем «оболочку» приложения
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', (event) => {
+  // сразу активируем новый SW
+  self.skipWaiting();
 });
 
-// Активация: чистим старые кеши
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+self.addEventListener('activate', (event) => {
+  // чистим старые кэши
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => (k === CACHE_NAME ? null : caches.delete(k))))
+    )
   );
+  self.clients.claim();
 });
 
-// Запросы: cache-first для статики своего домена, сеть — для остального
-self.addEventListener('fetch', (e) => {
-  const { request } = e;
-  const url = new URL(request.url);
+// Сеть-первым: берём свежие файлы из сети, кэш только как оффлайн-резерв
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
-  // не трогаем НЕ-GET и запросы на чужие домены (например, твой вебхук)
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-
-  e.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((res) => {
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        // Положим копию ответа в кэш (на случай оффлайна)
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, copy));
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match('/index.html'));
-    })
+      })
+      .catch(() => caches.match(req)) // если сеть недоступна — из кэша
   );
 });
