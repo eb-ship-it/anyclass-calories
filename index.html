@@ -117,19 +117,27 @@
         <span class="muted">Здесь появится превью фото</span>
       </div>
 
-      <div class="row">
-        <!-- Скрытый, но доступный инпут -->
-        <input id="file" type="file" accept="image/*" class="visually-hidden" />
-        <!-- Кнопка, которая программно открывает выбор/камеру -->
-        <button id="pickBtn" type="button" class="btn file">📷 Загрузить фото</button>
+     <div class="row">
+  <!-- Скрытый, но доступный input -->
+  <input
+    id="file"
+    type="file"
+    accept="image/*"
+    capture="environment"
+    class="visually-hidden"
+  />
 
-        <button id="analyzeBtn" class="btn">Рассчитать</button>
-        <span id="loading" class="muted" style="display:none;">Думаю… <span class="spinner"></span></span>
-      </div>
+  <!-- label триггерит открытие камеры/галереи нативно -->
+  <label for="file" id="pickBtn" class="btn file" role="button">📷 Загрузить фото</label>
 
-      <div id="error" class="err" style="margin-top:10px;"></div>
-      <div class="result" id="result"></div>
-    </div>
+  <button id="analyzeBtn" class="btn">Рассчитать</button>
+
+  <span id="loading" class="loading muted" aria-live="polite" aria-busy="false">
+    <span id="loadingText">Думаю…</span>
+    <span class="spinner"></span>
+  </span>
+</div>
+
 
     <!-- Статистика за сегодня -->
     <div class="card" id="statsCard" style="margin-top:12px; display:none;">
