@@ -23,7 +23,6 @@
       --bg: #0b1220;
       --card: rgba(17, 24, 39, 0.6);
       --card-stroke: rgba(255, 255, 255, 0.08);
-      --accent: #5eead4;
       --text: #eef2ff;
       --muted: rgba(238,242,255,.7);
       --danger: #ef4444;
@@ -38,7 +37,7 @@
         radial-gradient(1000px 800px at 10% -10%, #1f2937 0%, transparent 60%),
         radial-gradient(900px 700px at 120% 0%, #0ea5e9 0%, transparent 50%),
         radial-gradient(900px 700px at -20% 120%, #22d3ee 0%, transparent 50%),
-        var(--bg);
+        #0b1220;
     }
     .wrap { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
     header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
@@ -121,7 +120,6 @@
       <div class="row">
         <!-- Скрытый, но доступный инпут -->
         <input id="file" type="file" accept="image/*" class="visually-hidden" />
-
         <!-- Кнопка, которая программно открывает выбор/камеру -->
         <button id="pickBtn" type="button" class="btn file">📷 Загрузить фото</button>
 
@@ -133,12 +131,25 @@
       <div class="result" id="result"></div>
     </div>
 
+    <!-- Статистика за сегодня -->
+    <div class="card" id="statsCard" style="margin-top:12px; display:none;">
+      <h3 style="margin:0 0 8px;">Статистика за сегодня</h3>
+      <div class="list">
+        <div><strong>Калории:</strong> <span id="sKcal">0</span> ккал</div>
+        <div>Б: <span id="sP">0</span> · Ж: <span id="sF">0</span> · У: <span id="sC">0</span></div>
+        <div class="muted">Снимков: <span id="sCount">0</span></div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button id="resetStats" class="btn" type="button">Сбросить день</button>
+      </div>
+    </div>
+
     <p class="muted" style="margin-top:14px;">Совет: фото при хорошем освещении, без бликов — распознавание точнее.</p>
   </div>
 
   <script src="script.js"></script>
 
-  <!-- Регистрация service worker (оставляем как было) -->
+  <!-- Регистрация service worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
