@@ -25,7 +25,6 @@ let selectedFile = null;
 const LOADING_MESSAGES = [
   '🧠 Думаю…',
   '🔎 Ищу продукты на фото',
-  '☺️ В AnyClass крутые разработчики',
   '🥣 Анализирую тарелку',
   '📚 Сверяю с базой нутриентов',
   '⚖️ Считаю калории и БЖУ',
@@ -36,11 +35,12 @@ let loadingTimer = null;
 let loadingIndex = 0;
 
 function startLoading() {
+  if (!loadingEl) return;
   loadingIndex = 0;
   loadingTextEl.textContent = LOADING_MESSAGES[0];
   loadingEl.style.display = 'inline-flex';
-  loadingEl.setAttribute('aria-busy', 'true');
 
+  // меняем текст по кругу
   loadingTimer = setInterval(() => {
     loadingIndex = (loadingIndex + 1) % LOADING_MESSAGES.length;
     loadingTextEl.textContent = LOADING_MESSAGES[loadingIndex];
@@ -48,15 +48,22 @@ function startLoading() {
 }
 
 function stopLoading() {
+  if (!loadingEl) return;
   if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
   loadingEl.style.display = 'none';
-  loadingEl.setAttribute('aria-busy', 'false');
 }
 
+// На всякий случай — скрываем лоадер при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+  stopLoading();
+  renderStats();
+});
+
+// ---------- Утилиты ----------
 function setError(msg)   { errorBox.textContent = msg || ''; }
 function setResult(html) { result.innerHTML = html || ''; }
 
-// ---------- Вспомогательные для статистики ----------
+// ---------- Локальная статистика ----------
 const STATS_KEY_PREFIX = 'stats:';
 function todayKey() {
   const d = new Date();
@@ -73,8 +80,8 @@ function loadStats() {
   }
 }
 function renderStats() {
-  const s = loadStats();
   if (!statsCard) return;
+  const s = loadStats();
   statsCard.style.display = s.count > 0 ? 'block' : 'none';
   sKcal.textContent = Math.round(s.kcal);
   sP.textContent = Math.round(s.protein_g);
@@ -92,13 +99,10 @@ function saveStats(totals) {
   localStorage.setItem(todayKey(), JSON.stringify(s));
   renderStats();
 }
-
-// Сброс статистики
 resetStatsBtn?.addEventListener('click', () => {
   localStorage.removeItem(todayKey());
   renderStats();
 });
-document.addEventListener('DOMContentLoaded', renderStats);
 
 // ---------- Превью выбранного файла ----------
 fileInput.addEventListener('change', () => {
@@ -124,7 +128,7 @@ btn.addEventListener('click', async () => {
   }
 
   const fd = new FormData();
-  // имя поля должно быть 'image'
+  // Важно: имя поля 'image' — n8n положит файл в binary.image0
   fd.append('image', selectedFile);
 
   btn.disabled = true;
@@ -141,6 +145,7 @@ btn.addEventListener('click', async () => {
     }
 
     let data = await res.json();
+    // Подстраховки под разные структуры ответа
     if (Array.isArray(data)) data = data[0] || {};
     if (data && data.json && !data.items) data = data.json;
 
@@ -185,6 +190,7 @@ function renderResult(data) {
   const f = Number(totals.fat_g ?? 0);
   const c = Number(totals.carb_g ?? 0);
 
+  // Сохраняем в статистику за сегодня
   saveStats({ kcal, protein_g: p, fat_g: f, carb_g: c });
 
   setResult(`
