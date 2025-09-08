@@ -7,7 +7,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#0b1220" />
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,86 +19,80 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --bg: #0b1220;
-      --card: rgba(17, 24, 39, 0.6);
-      --card-stroke: rgba(255, 255, 255, 0.08);
-      --text: #eef2ff;
-      --muted: rgba(238,242,255,.7);
-      --danger: #ef4444;
+    :root{
+      --bg:#0b1220;
+      --card:rgba(17,24,39,.6);
+      --stroke:rgba(255,255,255,.08);
+      --text:#eef2ff;
+      --muted:rgba(238,242,255,.72);
+      --chip:#1f2937;
+      --good:#22d3ee;
+      --acc:#34d399;
+      --warn:#a78bfa;
+      --red:#ef4444;
     }
-    * { box-sizing: border-box }
-    html,body { height: 100% }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      color: var(--text);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
       background:
         radial-gradient(1000px 800px at 10% -10%, #1f2937 0%, transparent 60%),
         radial-gradient(900px 700px at 120% 0%, #0ea5e9 0%, transparent 50%),
         radial-gradient(900px 700px at -20% 120%, #22d3ee 0%, transparent 50%),
         var(--bg);
     }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
-    header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-    .logo {
-      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
-      background: linear-gradient(135deg, #34d399, #06b6d4);
-      box-shadow: 0 10px 30px rgba(6,182,212,.3);
-      font-size: 20px;
-    }
-    h1 { margin: 0; font-size: 22px; letter-spacing:.2px; }
+    .wrap{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#34d399,#06b6d4);box-shadow:0 10px 30px rgba(6,182,212,.3);font-size:20px}
+    h1{margin:0;font-size:22px;letter-spacing:.2px}
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--card-stroke);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 50px rgba(0,0,0,.3);
-      backdrop-filter: blur(10px);
-    }
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:16px;padding:18px 16px;box-shadow:0 10px 50px rgba(0,0,0,.3);backdrop-filter:blur(10px)}
+    .cta{color:var(--muted);font-size:15px;line-height:1.5;margin:6px 0 10px}
+    .cta strong{color:var(--text)}
 
-    .cta { color: var(--muted); font-size: 16px; line-height: 1.5; margin: 8px 0 14px; }
-    .cta strong { color: var(--text) }
+    .preview{width:100%;aspect-ratio:4/3;border-radius:12px;border:1px dashed rgba(255,255,255,.2);
+      background:rgba(255,255,255,.03);display:grid;place-items:center;overflow:hidden;margin:8px 0 12px}
+    .preview img{width:100%;height:100%;object-fit:cover}
 
-    .preview {
-      width: 100%; aspect-ratio: 4/3; border-radius: 12px; border: 1px dashed rgba(255,255,255,.2);
-      background: rgba(255,255,255,.03); display: grid; place-items: center; overflow: hidden; margin: 12px 0 12px;
-    }
-    .preview img { width: 100%; height: 100%; object-fit: cover }
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:0;cursor:pointer;padding:12px 16px;border-radius:12px;font-weight:600;
+      background:linear-gradient(135deg,#06b6d4,#34d399);color:#04121a;box-shadow:0 10px 25px rgba(6,182,212,.35)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .file{background:rgba(255,255,255,.08);color:var(--text)}
 
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center }
-    .btn {
-      appearance: none; border: 0; cursor: pointer; padding: 12px 16px; border-radius: 12px; font-weight: 600;
-      background: linear-gradient(135deg, #06b6d4, #34d399); color: #04121a; box-shadow: 0 10px 25px rgba(6,182,212,.35);
-    }
-    .btn:disabled { opacity:.6; cursor:not-allowed; }
-    .file { background: rgba(255,255,255,.08); color: var(--text); }
+    .muted{color:var(--muted);font-size:13px}
+    .err{color:var(--red);font-weight:600;margin-top:8px}
 
-    .muted { color: var(--muted); font-size:13px }
-    .err { color: var(--danger); font-weight:600 }
+    .loading{display:none;align-items:center;gap:8px}
+    .spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .8s linear infinite;display:inline-block;vertical-align:-3px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
 
-    .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35);
-      border-top-color: #fff; animation: spin .8s linear infinite; display: inline-block; vertical-align: -3px; }
-    @keyframes spin { to { transform: rotate(360deg) } }
+    /* ========== НОВЫЙ БЛОК РЕЗУЛЬТАТА ========== */
+    .totals-card{border-radius:14px;border:1px solid var(--stroke);padding:14px;background:rgba(255,255,255,.03);margin-top:8px}
+    .kcal-big{font-size:28px;font-weight:700}
+    .kcal-big small{font-size:14px;color:var(--muted);font-weight:600}
+    .bars{margin-top:10px;display:grid;gap:8px}
+    .bar{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;position:relative}
+    .bar > span{position:absolute;left:0;top:0;bottom:0;width:var(--val);border-radius:999px}
+    .bar.protein > span{background:linear-gradient(90deg,#34d399,#22d3ee)}
+    .bar.fat     > span{background:linear-gradient(90deg,#f59e0b,#a78bfa)}
+    .bar.carb    > span{background:linear-gradient(90deg,#60a5fa,#22d3ee)}
+    .bar-label{font-size:12px;color:var(--muted);margin:4px 0 0}
 
-    .result { margin-top: 16px }
-    .result h3 { margin: 0 0 8px; font-size: 18px }
-    .result .list { line-height: 1.6 }
+    .items-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .item-card{border:1px solid var(--stroke);background:rgba(255,255,255,.03);border-radius:12px;padding:12px}
+    .item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .item-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kcal-badge{background:rgba(52,211,153,.15);color:#b9ffde;border:1px solid rgba(52,211,153,.3);padding:4px 8px;border-radius:999px;font-size:12px}
+    .chips{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+    .chip{background:var(--chip);border:1px solid var(--stroke);color:var(--text);padding:4px 8px;border-radius:999px;font-size:12px}
 
-    /* loading по умолчанию скрыт */
-    .loading { display: none; align-items:center; gap:8px }
-    .visually-hidden {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0 0 0 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
+    /* Статистика */
+    .stats{margin-top:12px}
+    .stats .row-top{display:flex;align-items:center;justify-content:space-between}
+    .stats .big{font-size:22px;font-weight:700}
   </style>
 </head>
 <body>
@@ -119,44 +113,44 @@
       </div>
 
       <div class="row">
-        <!-- Скрытый, но доступный input -->
         <input id="file" type="file" accept="image/*" capture="environment" class="visually-hidden" />
-        <!-- label надёжно открывает камеру/галерею -->
         <label for="file" class="btn file" role="button">📷 Загрузить фото</label>
 
         <button id="analyzeBtn" class="btn">Рассчитать</button>
 
-        <!-- Живой индикатор (скрыт до старта анализа) -->
         <span id="loading" class="loading muted" aria-live="polite">
           <span id="loadingText">Думаю…</span>
           <span class="spinner"></span>
         </span>
       </div>
 
-      <div id="error" class="err" style="margin-top:10px;"></div>
+      <div id="error" class="err"></div>
       <div class="result" id="result"></div>
     </div>
 
     <!-- Статистика за сегодня -->
-    <div class="card" id="statsCard" style="margin-top:12px; display:none;">
-      <h3 style="margin:0 0 8px;">Статистика за сегодня</h3>
-      <div class="list">
-        <div><strong>Калории:</strong> <span id="sKcal">0</span> ккал</div>
-        <div>Б: <span id="sP">0</span> · Ж: <span id="sF">0</span> · У: <span id="sC">0</span></div>
-        <div class="muted">Снимков: <span id="sCount">0</span></div>
+    <div class="card stats" id="statsCard" style="display:none;">
+      <div class="row-top">
+        <h3 style="margin:0">Статистика за сегодня</h3>
+        <div class="big"><span id="sKcal">0</span> ккал</div>
+      </div>
+      <div class="chips" style="margin-top:8px;">
+        <span class="chip">Б: <span id="sP">0</span></span>
+        <span class="chip">Ж: <span id="sF">0</span></span>
+        <span class="chip">У: <span id="sC">0</span></span>
+        <span class="chip">Снимков: <span id="sCount">0</span></span>
       </div>
       <div class="row" style="margin-top:10px;">
         <button id="resetStats" class="btn" type="button">Сбросить день</button>
       </div>
     </div>
 
-    <p class="muted" style="margin-top:14px;">Совет: фото при хорошем освещении, без бликов — распознавание точнее.</p>
+    <p class="muted" style="margin-top:12px;">Совет: фото при хорошем освещении, без бликов — распознавание точнее.</p>
   </div>
 
-  <!-- ВАЖНО: добавь версию, чтобы обойти кэш -->
-  <script src="/script.js?v=9"></script>
+  <!-- Обновили версию, чтобы точно подхватился новый JS -->
+  <script src="/script.js?v=11"></script>
 
-  <!-- Регистрация SW (оставляем как было) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
