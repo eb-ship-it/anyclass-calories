@@ -1,5 +1,5 @@
 // Версию меняй при каждом релизе, чтобы сервис-воркер обновился
-const CACHE_NAME = 'anyclass-v13';
+const CACHE_NAME = 'anyclass-v14';
 
 self.addEventListener('install', (event) => {
   // сразу активируем новый SW
