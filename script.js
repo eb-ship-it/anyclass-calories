@@ -1,5 +1,5 @@
 // ====== НАСТРОЙКА ======
-const WEBHOOK_URL = 'https://n8n-f.anysports.tv/webhook/analyze';
+const WEBHOOK_URL = 'https://n8n-test.anysports.tv//webhook/analyze';
 
 // ====== DOM ======
 const fileInput = document.getElementById('file');
@@ -235,4 +235,5 @@ document.addEventListener('DOMContentLoaded', () => {
   stopLoading();
   renderStats();
 });
+
 
